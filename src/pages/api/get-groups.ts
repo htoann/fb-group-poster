@@ -1,11 +1,53 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import puppeteer from 'puppeteer';
+import puppeteer, { Page } from 'puppeteer';
 
 interface Group {
   id: string;
   name: string;
   url: string;
   memberCount?: string;
+}
+
+// Try to dismiss browser/Facebook notification permission prompts that block UI interaction
+async function dismissNotificationPopups(page: Page) {
+  try {
+    // 1. Browser level permission bubble is outside DOM (can't be controlled), but Facebook often shows its own in-DOM prompt
+    // We attempt several selectors heuristically.
+    const selectors = [
+      // Facebook in-app notification opt-in dialog buttons
+      'div[role="dialog"] [aria-label="Not now"]',
+      'div[role="dialog"] [aria-label="Cancel"]',
+      'div[role="dialog"] [data-testid="cancel_button"]',
+      'div[role="dialog"] [data-testid="decline_notifications"]',
+      'div[role="dialog"] [data-testid="notifications_inline_cancel"]',
+      // Generic buttons containing text
+      'div[role="dialog"] button',
+    ];
+
+    for (const sel of selectors) {
+      const btns = await page.$$(sel);
+      for (const b of btns) {
+        const text: string = await page.evaluate((el) => (el.textContent || '').trim().toLowerCase(), b as any);
+        if (['not now', 'cancel', 'close', 'deny', 'no thanks'].some((t) => text === t || text.includes(t))) {
+          await b.click().catch(() => {});
+          console.log('🛑 Dismissed notification prompt via selector:', sel, 'text:', text);
+          await new Promise((r) => setTimeout(r, 500));
+        }
+      }
+    }
+
+    // Remove any overlay that might block clicks
+    await page.evaluate(() => {
+      const blockers = Array.from(document.querySelectorAll('[role="dialog"]'));
+      // If dialog has only notification content and no decline button found, attempt to close by finding X button
+      blockers.forEach((d) => {
+        const closeBtn = d.querySelector('[aria-label="Close"], [aria-label="Đóng"], [aria-label="Close dialog"]');
+        if (closeBtn) (closeBtn as HTMLElement).click();
+      });
+    });
+  } catch (e) {
+    console.log('⚠️ Could not auto-dismiss notification popups:', (e as Error).message);
+  }
 }
 
 // Pause function for API route (simulated delay instead of user input)
@@ -36,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
-      args: ['--start-maximized'],
+      args: ['--start-maximized', '--disable-notifications'],
     });
 
     const page = await browser.newPage();
@@ -54,6 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await waitForUserInput();
     await page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {});
     await new Promise((r) => setTimeout(r, 4000));
+    await dismissNotificationPopups(page);
 
     if (targetAccountName) {
       // === SWITCH ACCOUNT ===
@@ -88,6 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.log(`✅ Switched to ${targetAccountName}`);
           await page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {});
           await new Promise((r) => setTimeout(r, 3000));
+          await dismissNotificationPopups(page);
         } else {
           console.log(`⚠️ Could not find switch button for: ${targetAccountName}`);
         }
