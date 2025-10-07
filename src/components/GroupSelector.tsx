@@ -9,6 +9,7 @@ const { Title, Text } = Typography;
 interface Group {
   id: string;
   name: string;
+  url: string;
 }
 
 interface GroupSelectorProps {
@@ -18,6 +19,7 @@ interface GroupSelectorProps {
 export const fakeGroups: Group[] = Array.from({ length: 50 }).map((_, i) => ({
   id: String(i + 1),
   name: `Facebook Group ${i + 1}`,
+  url: `https://www.facebook.com/groups/${i + 1}`,
 }));
 
 export default function GroupSelector({ onSelectionChange }: GroupSelectorProps) {

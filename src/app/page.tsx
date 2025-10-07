@@ -12,11 +12,11 @@ interface Group {
   id: string;
   name: string;
   url: string;
-  memberCount?: string;
 }
 
 export default function Home() {
   const [selectedGroups, setSelectedGroups] = useState<Group[]>([]);
+  const [postContent, setPostContent] = useState<string>('');
 
   const handleSelectionChange = (groups: Group[]) => {
     setSelectedGroups(groups);
@@ -28,10 +28,15 @@ export default function Home() {
       return;
     }
 
-    // Here you can implement the posting logic
-    // For now, just show which groups are selected
+    if (!postContent) {
+      alert('Please enter the content you want to post.');
+      return;
+    }
+
+    // For now, just show which groups are selected and the content
     console.log('Posting to selected groups:', selectedGroups);
-    alert(`Ready to post to ${selectedGroups.length} selected groups!`);
+    console.log('Post content:', postContent);
+    alert(`Ready to post to ${selectedGroups.length} selected group(s)!\n\nContent:\n${postContent}`);
   };
 
   return (
@@ -112,6 +117,40 @@ export default function Home() {
                   },
                 ]}
               />
+            </div>
+
+            {/* Post Content Input */}
+            <div className="post-content" style={{ marginTop: 32 }}>
+              <textarea
+                placeholder="Enter your post content"
+                className="post-input"
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  borderRadius: '4px',
+                  border: '1px solid #d9d9d9',
+                  marginBottom: 8,
+                  minHeight: 120,
+                  resize: 'vertical',
+                }}
+              />
+              <Button
+                type="primary"
+                size="large"
+                onClick={handlePostToSelectedGroups}
+                style={{
+                  width: '100%',
+                  background: '#52c41a',
+                  borderColor: '#52c41a',
+                  fontSize: '16px',
+                  height: '48px',
+                }}
+              >
+                Post
+              </Button>
             </div>
           </div>
         )}
