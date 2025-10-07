@@ -25,7 +25,7 @@ const fakeGroups: Group[] = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 export default function GroupSelector({ onSelectionChange }: GroupSelectorProps) {
-  const [groups, setGroups] = useState<Group[]>(fakeGroups);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
