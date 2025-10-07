@@ -1,21 +1,10 @@
-import { ConfigProvider } from "antd";
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { ConfigProvider } from 'antd';
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Facebook Group Poster",
-  description: "Post to Facebook groups automatically",
+  title: 'Facebook Group Poster',
+  description: 'Post to Facebook groups automatically',
 };
 
 export default function RootLayout({
@@ -25,14 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
         <ConfigProvider
           theme={{
             token: {
-              colorPrimary: "#1677ff",
-              fontFamily: "var(--font-geist-sans), Arial, sans-serif",
+              colorPrimary: '#1677ff',
+              fontFamily: "'Segoe UI', Arial, sans-serif",
             },
           }}
         >

@@ -1,17 +1,8 @@
-"use client";
+'use client';
 
-import { GlobalOutlined, ReloadOutlined } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Checkbox,
-  Divider,
-  Space,
-  Spin,
-  Typography,
-} from "antd";
-import { useEffect, useState } from "react";
+import { GlobalOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Checkbox, Col, Input, Row, Skeleton, Space, Typography } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -26,212 +17,173 @@ interface GroupSelectorProps {
   onSelectionChange?: (selectedGroups: Group[]) => void;
 }
 
-export default function GroupSelector({
-  onSelectionChange,
-}: GroupSelectorProps) {
-  const [groups, setGroups] = useState<Group[]>([]);
+const fakeGroups: Group[] = Array.from({ length: 12 }, (_, i) => ({
+  id: `1000${i + 1}`,
+  name: `Frontend Dev Community ${i + 1}`,
+  url: `https://facebook.com/groups/fake${i + 1}`,
+  memberCount: `${(i + 1) * 1000} members`,
+}));
+
+export default function GroupSelector({ onSelectionChange }: GroupSelectorProps) {
+  const [groups, setGroups] = useState<Group[]>(fakeGroups);
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [selectAll, setSelectAll] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // Fetch groups from API
+  const filteredGroups = useMemo(() => {
+    return groups.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()));
+  }, [groups, search]);
+
   const fetchGroups = async () => {
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const response = await fetch("/api/get-groups");
-      const data = await response.json();
+      const res = await fetch('/api/get-groups');
+      const data = await res.json();
 
-      if (data.success) {
-        setGroups(data.groups);
-      } else {
-        setError(data.message || "Failed to fetch groups");
-      }
+      if (data.success) setGroups(data.groups);
+      else setError(data.message || 'Failed to fetch groups');
     } catch (err) {
-      setError("Network error occurred while fetching groups");
-      console.error("Error fetching groups:", err);
+      setError('Network error occurred while fetching groups');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle individual checkbox change
   const handleGroupToggle = (groupId: string) => {
-    const newSelected = new Set(selectedGroups);
-
-    if (newSelected.has(groupId)) {
-      newSelected.delete(groupId);
-    } else {
-      newSelected.add(groupId);
-    }
+    const newSelected = new Set<string>(selectedGroups);
+    newSelected.has(groupId) ? newSelected.delete(groupId) : newSelected.add(groupId);
 
     setSelectedGroups(newSelected);
-
-    // Update select all state
     setSelectAll(newSelected.size === groups.length && groups.length > 0);
 
-    // Notify parent component
-    if (onSelectionChange) {
-      const selectedGroupObjects = groups.filter((group) =>
-        newSelected.has(group.id)
-      );
-      onSelectionChange(selectedGroupObjects);
-    }
+    onSelectionChange?.(groups.filter((g) => newSelected.has(g.id)));
   };
 
-  // Handle select all toggle
-  const handleSelectAllToggle = () => {
-    let newSelected: Set<string>;
-
-    if (selectAll) {
-      // Deselect all
-      newSelected = new Set();
-      setSelectAll(false);
-    } else {
-      // Select all
-      newSelected = new Set(groups.map((group) => group.id));
-      setSelectAll(true);
-    }
-
+  const handleSelectAll = () => {
+    const allSelected = !selectAll;
+    setSelectAll(allSelected);
+    const newSelected = allSelected ? new Set<string>(groups.map((g) => g.id)) : new Set<string>();
     setSelectedGroups(newSelected);
-
-    // Notify parent component
-    if (onSelectionChange) {
-      const selectedGroupObjects = groups.filter((group) =>
-        newSelected.has(group.id)
-      );
-      onSelectionChange(selectedGroupObjects);
-    }
+    onSelectionChange?.(groups.filter((g) => newSelected.has(g.id)));
   };
 
-  // Update select all state when groups change
   useEffect(() => {
-    if (groups.length > 0) {
-      setSelectAll(selectedGroups.size === groups.length);
-    }
+    if (groups.length > 0) setSelectAll(selectedGroups.size === groups.length);
   }, [groups, selectedGroups]);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px" }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
       <Card>
-        <Title level={2}>Facebook Groups</Title>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Title level={3} style={{ marginBottom: 0 }}>
+            Facebook Groups
+          </Title>
 
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            onClick={fetchGroups}
-            loading={loading}
-            size="large"
-          >
-            {loading ? "Loading Groups..." : "Load Groups"}
-          </Button>
+          <Space wrap>
+            <Button type="primary" icon={<ReloadOutlined />} onClick={fetchGroups} loading={loading}>
+              {loading ? 'Loading...' : 'Load Groups'}
+            </Button>
+
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Search groups..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 240 }}
+              allowClear
+            />
+          </Space>
 
           {selectedGroups.size > 0 && (
             <Text type="secondary">
-              {selectedGroups.size} of {groups.length} groups selected
+              {selectedGroups.size} of {groups.length} selected
             </Text>
           )}
         </Space>
-
-        <Divider />
       </Card>
 
-      {error && (
-        <Alert
-          message="Error"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {error && <Alert type="error" message="Error" description={error} showIcon style={{ marginTop: 16 }} />}
 
-      {groups.length > 0 && (
-        <Card style={{ marginTop: 16 }}>
-          {/* Select All Header */}
-          <div
-            style={{
-              padding: "16px",
-              borderBottom: "1px solid #f0f0f0",
-              backgroundColor: "#fafafa",
-            }}
-          >
-            <Checkbox checked={selectAll} onChange={handleSelectAllToggle}>
-              <Text strong>Select All ({groups.length} groups)</Text>
-            </Checkbox>
-          </div>
+      {/* Main Group List */}
+      <Card
+        style={{
+          marginTop: 16,
+          background: '#fafafa',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#fff',
+            padding: '12px 16px',
+            borderRadius: 8,
+            marginBottom: 16,
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+          }}
+        >
+          <Checkbox checked={selectAll} onChange={handleSelectAll}>
+            Select All ({groups.length})
+          </Checkbox>
+          <Text type="secondary">{filteredGroups.length} groups found</Text>
+        </div>
 
-          {/* Group List */}
-          <div style={{ maxHeight: 384, overflowY: "auto" }}>
-            {groups.map((group, index) => (
-              <div
-                key={group.id}
-                style={{
-                  padding: "16px",
-                  borderBottom:
-                    index === groups.length - 1 ? "none" : "1px solid #f0f0f0",
-                  backgroundColor: selectedGroups.has(group.id)
-                    ? "#e6f7ff"
-                    : "transparent",
-                  transition: "background-color 0.3s",
-                }}
-              >
-                <Space align="start" style={{ width: "100%" }}>
-                  <Checkbox
-                    checked={selectedGroups.has(group.id)}
-                    onChange={() => handleGroupToggle(group.id)}
-                    style={{ marginTop: 2 }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <Text strong style={{ fontSize: "14px" }}>
-                      {group.name}
-                    </Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      ID: {group.id}
-                    </Text>
-                    <br />
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<GlobalOutlined />}
-                      href={group.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ padding: 0, height: "auto", fontSize: "12px" }}
-                    >
-                      View Group
-                    </Button>
-                  </div>
-                  <Text type="secondary" style={{ fontSize: "12px" }}>
-                    #{index + 1}
-                  </Text>
-                </Space>
-              </div>
+        {loading ? (
+          <Row gutter={[16, 16]}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Col span={8} key={i}>
+                <Card>
+                  <Skeleton active paragraph={{ rows: 2 }} />
+                </Card>
+              </Col>
             ))}
-          </div>
-        </Card>
-      )}
+          </Row>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {filteredGroups.map((group) => (
+              <Col xs={24} sm={12} md={8} key={group.id}>
+                <Card
+                  hoverable
+                  style={{
+                    background: selectedGroups.has(group.id) ? '#e6f7ff' : '#fff',
+                    transition: '0.2s',
+                  }}
+                  onClick={() => handleGroupToggle(group.id)}
+                >
+                  <Space align="start">
+                    <Checkbox checked={selectedGroups.has(group.id)} onChange={() => handleGroupToggle(group.id)} />
+                    <div>
+                      <Text strong>{group.name}</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {group.memberCount}
+                      </Text>
+                      <br />
+                      <a href={group.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                        <GlobalOutlined /> View Group
+                      </a>
+                    </div>
+                  </Space>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
 
-      {loading && (
-        <div style={{ textAlign: "center", padding: "32px" }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 8 }}>
-            <Text type="secondary">Fetching groups...</Text>
+        {!loading && filteredGroups.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <Text type="secondary">No groups found</Text>
           </div>
-        </div>
-      )}
-
-      {!loading && groups.length === 0 && !error && (
-        <div style={{ textAlign: "center", padding: "32px" }}>
-          <Text type="secondary">
-            Click "Load Groups" to fetch your Facebook groups
-          </Text>
-        </div>
-      )}
+        )}
+      </Card>
     </div>
   );
 }
