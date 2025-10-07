@@ -206,7 +206,6 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
                   <Col xs={24} sm={12} md={8} lg={6} key={group.id}>
                     <Card
                       hoverable
-                      onClick={() => handleGroupToggle(group.id)}
                       style={{
                         borderRadius: 10,
                         transition: 'all 0.3s ease',
@@ -217,7 +216,13 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
                       bodyStyle={{ padding: 14 }}
                     >
                       <Space direction="vertical" size={4}>
-                        <Checkbox checked={checked} onChange={() => handleGroupToggle(group.id)}>
+                        <Checkbox
+                          checked={checked}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleGroupToggle(group.id);
+                          }}
+                        >
                           <Text strong>{group.name}</Text>
                         </Checkbox>
                       </Space>

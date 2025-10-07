@@ -18,45 +18,26 @@ export default function Home() {
   const [selectedGroups, setSelectedGroups] = useState<Group[]>([]);
   const [postContent, setPostContent] = useState<string>('');
 
-  const handleSelectionChange = (groups: Group[]) => {
-    setSelectedGroups(groups);
-  };
+  const handleSelectionChange = (groups: Group[]) => setSelectedGroups(groups);
 
   const handlePostToSelectedGroups = async () => {
-    if (selectedGroups.length === 0) {
-      alert('Please select at least one group to post to.');
-      return;
-    }
+    if (!selectedGroups.length) return alert('Please select at least one group.');
+    if (!postContent.trim()) return alert('Please enter post content.');
 
-    if (!postContent) {
-      alert('Please enter the content you want to post.');
-      return;
-    }
-
-    // For now, just show which groups are selected and the content
     console.log('Posting to selected groups:', selectedGroups);
     console.log('Post content:', postContent);
-    alert(`Ready to post to ${selectedGroups.length} selected group(s)!\n\nContent:\n${postContent}`);
+    alert(`Ready to post to ${selectedGroups.length} group(s)!\n\nContent:\n${postContent}`);
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
-      <Content
-        style={{
-          padding: '32px',
-          maxWidth: 1200,
-          margin: '0 auto',
-          width: '100%',
-        }}
-      >
+    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <Content style={{ padding: '32px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <Title level={1} style={{ marginBottom: 8 }}>
-            Facebook Group Poster
+            🚀 Facebook Group Poster
           </Title>
-          <Paragraph style={{ fontSize: '16px', color: 'rgba(0, 0, 0, 0.65)' }}>
-            Select Facebook groups and post to them automatically
-          </Paragraph>
+          <Paragraph type="secondary">Select your Facebook groups and post content automatically.</Paragraph>
         </div>
 
         {/* Group Selector */}
@@ -64,94 +45,60 @@ export default function Home() {
           <GroupSelector onSelectionChange={handleSelectionChange} />
         </div>
 
-        {/* Action Buttons */}
+        {/* Selected Groups & Content */}
         {selectedGroups.length > 0 && (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ maxWidth: 700, margin: '0 auto' }}>
+            <Collapse
+              bordered={false}
+              style={{ marginBottom: 24 }}
+              items={[
+                {
+                  key: '1',
+                  label: `Selected Groups (${selectedGroups.length})`,
+                  children: (
+                    <div>
+                      {selectedGroups.map((g, i) => (
+                        <Text key={g.id} style={{ display: 'block', padding: '4px 0' }}>
+                          {i + 1}. {g.name}
+                        </Text>
+                      ))}
+                    </div>
+                  ),
+                },
+              ]}
+            />
+
+            <textarea
+              placeholder="Enter your post content..."
+              value={postContent}
+              onChange={(e) => setPostContent(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: 16,
+                borderRadius: 6,
+                border: '1px solid #d9d9d9',
+                minHeight: 140,
+                resize: 'vertical',
+                marginBottom: 16,
+              }}
+            />
+
             <Button
               type="primary"
               size="large"
               icon={<RocketOutlined />}
               onClick={handlePostToSelectedGroups}
               style={{
+                width: '100%',
                 background: '#52c41a',
                 borderColor: '#52c41a',
-                fontSize: '16px',
-                height: '48px',
-                padding: '0 24px',
+                fontSize: 16,
+                height: 48,
               }}
             >
-              Post to {selectedGroups.length} Selected Group
-              {selectedGroups.length !== 1 ? 's' : ''}
+              Post to {selectedGroups.length} Group{selectedGroups.length > 1 ? 's' : ''}
             </Button>
-
-            <div style={{ marginTop: 16 }}>
-              <Collapse
-                size="small"
-                items={[
-                  {
-                    key: '1',
-                    label: `View Selected Groups (${selectedGroups.length})`,
-                    children: (
-                      <div
-                        style={{
-                          textAlign: 'left',
-                          maxWidth: 600,
-                          margin: '0 auto',
-                        }}
-                      >
-                        {selectedGroups.map((group, index) => (
-                          <div
-                            key={group.id}
-                            style={{
-                              padding: '4px 8px',
-                              borderBottom: index === selectedGroups.length - 1 ? 'none' : '1px solid #f0f0f0',
-                            }}
-                          >
-                            <Text>
-                              {index + 1}. {group.name}
-                            </Text>
-                          </div>
-                        ))}
-                      </div>
-                    ),
-                  },
-                ]}
-              />
-            </div>
-
-            {/* Post Content Input */}
-            <div className="post-content" style={{ marginTop: 32 }}>
-              <textarea
-                placeholder="Enter your post content"
-                className="post-input"
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  borderRadius: '4px',
-                  border: '1px solid #d9d9d9',
-                  marginBottom: 8,
-                  minHeight: 120,
-                  resize: 'vertical',
-                }}
-              />
-              <Button
-                type="primary"
-                size="large"
-                onClick={handlePostToSelectedGroups}
-                style={{
-                  width: '100%',
-                  background: '#52c41a',
-                  borderColor: '#52c41a',
-                  fontSize: '16px',
-                  height: '48px',
-                }}
-              >
-                Post
-              </Button>
-            </div>
           </div>
         )}
       </Content>
