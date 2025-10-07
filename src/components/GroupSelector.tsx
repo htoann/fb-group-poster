@@ -21,7 +21,7 @@ export const fakeGroups: Group[] = Array.from({ length: 50 }).map((_, i) => ({
 }));
 
 export default function GroupSelector({ onSelectionChange }: GroupSelectorProps) {
-  const [groups, setGroups] = useState<Group[]>(fakeGroups);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,14 +33,23 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
     [groups, search],
   );
 
+  useEffect(() => {
+    const storedGroups = localStorage.getItem('groups');
+    if (storedGroups) {
+      setGroups(JSON.parse(storedGroups));
+    }
+  }, []);
+
   const fetchGroups = async () => {
     setLoading(true);
     setError('');
     try {
       const res = await fetch('/api/get-groups');
       const data = await res.json();
+      console.log('data', data);
       if (Array.isArray(data)) {
-        setGroups(data.map((name, i) => ({ id: String(i), name, url: '' })));
+        setGroups(data);
+        localStorage.setItem('groups', JSON.stringify(data));
       } else {
         setError(data.message || 'Failed to fetch groups');
       }
