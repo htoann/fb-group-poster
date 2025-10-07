@@ -1,7 +1,7 @@
 'use client';
 
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Checkbox, Col, Empty, Input, Row, Skeleton, Space, Tag, Typography } from 'antd';
+import { Affix, Alert, Button, Card, Checkbox, Col, Empty, Input, Row, Skeleton, Space, Tag, Typography } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 
 const { Title, Text } = Typography;
@@ -48,7 +48,6 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
     try {
       const res = await fetch('/api/get-groups');
       const data = await res.json();
-      console.log('data', data);
       if (Array.isArray(data)) {
         setGroups(data);
         localStorage.setItem('groups', JSON.stringify(data));
@@ -107,21 +106,17 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
               Facebook Groups
             </Title>
 
-            {selectedGroups.size > 0 && (
-              <Tag
-                color="blue"
-                style={{
-                  fontSize: 13,
-                  borderRadius: 6,
-                  padding: '0 8px',
-                }}
-              >
-                {selectedGroups.size} selected
-              </Tag>
-            )}
+            <Affix offsetTop={20}>
+              {selectedGroups.size > 0 && (
+                <Tag color="blue" style={{ fontSize: 13, borderRadius: 6, padding: '0 8px' }}>
+                  {selectedGroups.size} selected
+                </Tag>
+              )}
+            </Affix>
 
             <Space>
               <Input
+                autoFocus
                 prefix={<SearchOutlined />}
                 placeholder="Search groups..."
                 value={search}
@@ -178,9 +173,11 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
             position: 'sticky',
             top: 0,
             zIndex: 10,
+            background: '#fff',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
           }}
         >
-          <Checkbox checked={selectAll} onChange={handleSelectAll}>
+          <Checkbox checked={selectAll} onChange={handleSelectAll} title="Select all visible groups">
             Select All ({groups.length})
           </Checkbox>
           <Text type="secondary">{filteredGroups.length} results</Text>
@@ -192,7 +189,13 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
             <Row gutter={[16, 16]}>
               {Array.from({ length: 6 }).map((_, i) => (
                 <Col span={8} key={i}>
-                  <Card style={{ borderRadius: 10 }}>
+                  <Card
+                    style={{
+                      borderRadius: 10,
+                      opacity: 0,
+                      animation: 'fadeIn 0.3s forwards',
+                    }}
+                  >
                     <Skeleton active paragraph={{ rows: 1 }} />
                   </Card>
                 </Col>
@@ -206,24 +209,24 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
                   <Col xs={24} sm={12} md={8} lg={6} key={group.id}>
                     <Card
                       hoverable
+                      onClick={() => handleGroupToggle(group.id)}
                       style={{
                         borderRadius: 10,
-                        transition: 'all 0.3s ease',
+                        transition: 'all 0.2s ease',
                         background: checked ? '#e6f7ff' : '#fff',
                         border: checked ? '1px solid #1677ff' : '1px solid #f0f0f0',
+                        boxShadow: checked ? '0 4px 8px rgba(0, 119, 255, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
                         cursor: 'pointer',
                       }}
                       bodyStyle={{ padding: 14 }}
                     >
                       <Space direction="vertical" size={4}>
-                        <Checkbox
-                          checked={checked}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleGroupToggle(group.id);
-                          }}
-                        >
-                          <Text strong>{group.name}</Text>
+                        <Checkbox checked={checked} onClick={(e) => e.stopPropagation()}>
+                          <Text strong>
+                            {search
+                              ? group.name.replace(new RegExp(search, 'gi'), (match) => `<mark>${match}</mark>`)
+                              : group.name}
+                          </Text>
                         </Checkbox>
                       </Space>
                     </Card>
@@ -240,6 +243,17 @@ export default function GroupSelector({ onSelectionChange }: GroupSelectorProps)
           )}
         </div>
       </Card>
+
+      <style>{`
+        mark {
+          background-color: #ffe58f;
+          padding: 0 2px;
+          border-radius: 2px;
+        }
+        @keyframes fadeIn {
+          to { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
